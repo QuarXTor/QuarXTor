@@ -16,3 +16,13 @@ This repository is the **meta / top-level** project for the QuarXTor ecosystem:
 - [`QuarXTor/QuarXNet`](https://github.com/QuarXTor/QuarXNet) – networking, RPC, cluster
 - [`QuarXTor/QuarXDrive`](https://github.com/QuarXTor/QuarXDrive) – drivers, FUSE, clients
 - [`QuarXTor/QuarXCloud`](https://github.com/QuarXTor/QuarXCloud) – cloud / multi-node / orchestration
+
+
+## Funding
+
+QuarXTor is developed as part of a long-term HGSS ecosystem.
+
+You can support ongoing work via Open Collective:  
+➡️ https://opencollective.com/quarxtor
+
+[![Support QuarXTor](https://opencollective.com/quarxtor/donate/button.png)](https://opencollective.com/quarxtor/donate)
