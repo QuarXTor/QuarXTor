@@ -35,7 +35,6 @@ Your support helps to fund development, documentation, testing hardware and long
 
 ### Cryptocurrency
 
-(Replace addresses with your own)
 
 **Bitcoin (BTC):**
 bc1q53gchh5x9d80yd6ae7kud7fq4pxmnawsvsrzs8
