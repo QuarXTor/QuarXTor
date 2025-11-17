@@ -30,7 +30,7 @@ Your support helps to fund development, documentation, testing hardware and long
 
 ### GitHub Sponsors
 
-(available after activation)
+
 ➡️ [https://github.com/sponsors/QuarXTor](https://github.com/sponsors/QuarXTor)
 
 ### Cryptocurrency
