@@ -1,0 +1,23 @@
+@@ -445,7 +445,7 @@ fn import_l0_dir(
+         Ok(rd) => rd,
+     };
+
+-    for entry in rd {
++    for entry in rd {
+         let entry = match entry {
+             Ok(e) => e,
+             Err(e) => {
+@@ -455,7 +455,7 @@ fn import_l0_dir(
+         let child_path = entry.path();
+
+-        if let Some    name) = child_path.file_name().and_then(|s| s.to_str()) {
++        if let Some(name) = child_path.file_name().and_then(|s| s.to_str()) {
+             if opts.skip_hidden && name.starts_with('.') {
+                 continue;
+             }
+@@ -479,7 +479,7 @@ fn import_l0_dir(
+ 
+         children_ids.push(child_id);
+     }
+-}
++}

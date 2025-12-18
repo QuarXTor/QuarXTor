@@ -1,0 +1,21 @@
+[package]
+name = "quarxnet"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "quarxnet"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = "0.4"
+
+bincode = "1"
+
+serde = { version = "1", features = ["derive"] }
+
+quarxtor-core = { path = "../core-rs" }
+quarxdrive = { path = "../quarxdrive" }
+uuid = { version = "1", features = ["v4"] }
+quarxproto = { path = "../quarxproto" }
+smallvec = "1.13"

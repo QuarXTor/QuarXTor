@@ -1,0 +1,13 @@
+[package]
+name = "quarxctl"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "quarxctl"
+path = "src/main.rs"
+
+[dependencies]
+quarxtor-core = { path = "../../core-rs" }
+quarxdrive    = { path = "../../quarxdrive" }
+quarxnet      = { path = "../../quarxnet" }

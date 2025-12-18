@@ -1,0 +1,14 @@
+/target/
+/backups/
+/QuarXTor-project-*.zip
+
+# IDE / tooling
+/.idea/
+/.vscode/
+/.venv/
+/*.log
+
+
+# Patch leftovers
+*.orig
+*.rej

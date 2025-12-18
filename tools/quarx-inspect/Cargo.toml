@@ -1,0 +1,11 @@
+[package]
+name = "quarx-inspect"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "quarx-inspect"
+path = "src/main.rs"
+
+[dependencies]
+quarxtor-core = { path = "../../core-rs" }
