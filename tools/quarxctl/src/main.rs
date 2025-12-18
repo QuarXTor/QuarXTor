@@ -108,7 +108,8 @@ Examples:
   quarxctl repo.qblk fs-tree
   quarxctl repo.qblk fs-import ~/SOURCE-DB"
     );
-    exit(1);
+    let is_help = env::args().any(|a| a == "--help" || a == "-h");
+    exit(if is_help { 0 } else { 1 });
 }
 
 fn cfg_show() -> ! {

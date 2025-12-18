@@ -8,7 +8,6 @@ use std::thread;
 use std::time::Duration;
 
 use smallvec::{smallvec, SmallVec};
-use quarxdrive::OBJ_TYPE_BYTES;
 use quarxtor_core::block::multi::MultiRecipe;
 use quarxtor_core::codec::{ObjectPayload, ZPayload};
 use quarxtor_core::config::QuarxConfig;
@@ -24,6 +23,8 @@ use quarxnet::protocol::{
 use quarxnet::transport::TcpTransport;
 
 const CHUNK_SIZE: usize = 8 * 1024;
+// Keep object type tag local to avoid a back-edge on quarxdrive.
+const OBJ_TYPE_BYTES: u32 = 1;
 
 struct Config {
     bind_addr: String,

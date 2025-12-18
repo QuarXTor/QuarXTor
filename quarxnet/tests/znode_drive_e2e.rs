@@ -132,15 +132,18 @@ fn znode_roundtrip_over_net_and_drive() {
     // Wait for server thread to finish.
     server_thread.join().expect("server thread").expect("server ok");
 
-    // Read the same object via quarxdrive Repo using the stored id.
+    // Read the same object via the quarxnet backend using the stored id.
     let obj_id = last_object_id
         .lock()
         .unwrap()
         .clone()
         .expect("object id stored");
-    let drive_backend = quarxdrive::FileBackend::new(&store_dir).expect("drive backend");
-    let drive_repo = quarxdrive::Repo::new(drive_backend);
-    let zn_drive = drive_repo.get_znode(&obj_id).expect("drive get znode");
+    let drive_backend = FileBackend::new(&store_dir).expect("drive backend");
+    let drive_repo = Repo::new(drive_backend);
+    let raw = drive_repo
+        .get_object_raw(&obj_id)
+        .expect("drive get object raw");
+    let zn_drive = ZNode::deserialize(&raw).expect("drive znode decode");
 
     assert_eq!(zn_drive.kind, zn.kind);
     assert_eq!(zn_drive.size, zn.size);
