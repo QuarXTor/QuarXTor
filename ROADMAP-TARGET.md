@@ -233,13 +233,13 @@ EVIDENCE:
 Goal: eliminate `HashMap<BlockId, Vec<u8>>` as primary storage.
 
 - [x] Baseline benchmark recorded (current mem_store behavior)
-- [ ] New dense layout chosen:
+- [x] New dense layout chosen:
   - [ ] Option A: `Vec<Vec<u8>>` (only if no deletes)
-  - [ ] Option B: `Vec<Option<Vec<u8>>>` (allows delete)
+  - [x] Option B: `Vec<Option<Vec<u8>>>` (allows delete)
   - [ ] Option C: slab (`Vec<Entry>` + free list)
-- [ ] Implementation completed in `core-rs/src/store/mem_store.rs`
-- [ ] `list_block_ids()` remains supported and deterministic
-- [ ] All core tests pass
+- [x] Implementation completed in `core-rs/src/store/mem_store.rs`
+- [x] `list_block_ids()` remains supported and deterministic
+- [x] All core tests pass
 - [ ] Memory usage improvement measured (RSS) OR explicit “no regression” statement with numbers
 
 EVIDENCE:
@@ -247,8 +247,10 @@ EVIDENCE:
 - `core-rs/tests/*`
 - `docs/bench/mem_store.md` (or similar)
 - EVIDENCE: core-rs/tests/mem_store_bench.rs
+- EVIDENCE: core-rs/src/store/mem_store.rs
+- EVIDENCE: core-rs/tests/mem_store_roundtrip.rs
 - CMD: cargo test --workspace
-- OUT: test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+- OUT: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 - CMD: cargo test -p quarxtor-core mem_store_baseline_bench -- --ignored --nocapture
 - OUT: mem_store_baseline: blocks=1024 block_size=65536 bytes=67108864 seed=0x9e3779b97f4a7c15
 - OUT: write: 0.640176s 99.97 MiB/s
