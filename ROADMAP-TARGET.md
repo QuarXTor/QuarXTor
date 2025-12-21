@@ -240,7 +240,7 @@ Goal: eliminate `HashMap<BlockId, Vec<u8>>` as primary storage.
 - [x] Implementation completed in `core-rs/src/store/mem_store.rs`
 - [x] `list_block_ids()` remains supported and deterministic
 - [x] All core tests pass
-- [ ] Memory usage improvement measured (RSS) OR explicit “no regression” statement with numbers
+- [x] Memory usage improvement measured (RSS) OR explicit “no regression” statement with numbers
 
 EVIDENCE:
 - `core-rs/src/store/mem_store.rs`
@@ -256,6 +256,11 @@ EVIDENCE:
 - OUT: write: 0.640176s 99.97 MiB/s
 - OUT: read: 0.008160s 7843.09 MiB/s checksum=82944
 - OUT: rss_kb: before=3372 after_write=69328 after_read=69392
+- CMD: cargo test -p quarxtor-core mem_store_dense_bench -- --ignored --nocapture
+- OUT: mem_store_dense: blocks=1024 block_size=65536 bytes=67108864 seed=0x9e3779b97f4a7c15
+- OUT: write: 0.573339s 111.63 MiB/s
+- OUT: read: 0.008297s 7713.56 MiB/s checksum=82944
+- OUT: rss_kb: before=3444 after_write=69268 after_read=69332
 
 ## E1.3 [PLAN] Verify/Validate contract is complete and deterministic
 - [ ] Verify detects missing blocks referenced by graph

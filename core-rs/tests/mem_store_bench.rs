@@ -9,6 +9,7 @@ use quarxtor_core::store::blockstore::{
     BlockStore, StoreError, StoreResult,
 };
 use quarxtor_core::store::decode::BlockBody;
+use quarxtor_core::store::mem_store::MemBlockStore;
 use quarxtor_core::types::{BlockId, BlockKind};
 
 const BLOCK_SIZE: usize = 64 * 1024;
@@ -158,6 +159,59 @@ fn mem_store_baseline_bench() {
 
     println!(
         "mem_store_baseline: blocks={} block_size={} bytes={} seed=0x{:016x}",
+        blocks, block_size, total_bytes, SEED
+    );
+    println!(
+        "write: {:.6}s {:.2} MiB/s",
+        write_dur.as_secs_f64(),
+        mib_per_sec(total_bytes, write_dur)
+    );
+    println!(
+        "read: {:.6}s {:.2} MiB/s checksum={}",
+        read_dur.as_secs_f64(),
+        mib_per_sec(total_bytes, read_dur),
+        checksum
+    );
+    println!(
+        "rss_kb: before={} after_write={} after_read={}",
+        fmt_opt_u64(rss_before),
+        fmt_opt_u64(rss_after_write),
+        fmt_opt_u64(rss_after_read)
+    );
+}
+
+#[test]
+#[ignore]
+fn mem_store_dense_bench() {
+    let blocks = BLOCKS;
+    let block_size = BLOCK_SIZE;
+    let total_bytes = (blocks as u64) * (block_size as u64);
+
+    let mut store = MemBlockStore::new();
+    let mut payload = vec![0u8; block_size];
+
+    let rss_before = read_rss_kb();
+
+    let write_start = Instant::now();
+    for i in 0..blocks {
+        fill_block(&mut payload, SEED ^ (i as u64));
+        store.put_l0(&payload).expect("put_l0");
+    }
+    let write_dur = write_start.elapsed();
+    let rss_after_write = read_rss_kb();
+
+    let read_start = Instant::now();
+    let mut checksum: u64 = 0;
+    for id in 0..(blocks as BlockId) {
+        let frame = store.get_frame(id).expect("get_frame");
+        checksum = checksum.wrapping_add(frame[0] as u64);
+        black_box(&frame);
+    }
+    let read_dur = read_start.elapsed();
+    let rss_after_read = read_rss_kb();
+
+    println!(
+        "mem_store_dense: blocks={} block_size={} bytes={} seed=0x{:016x}",
         blocks, block_size, total_bytes, SEED
     );
     println!(
