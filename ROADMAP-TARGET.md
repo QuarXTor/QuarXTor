@@ -234,9 +234,9 @@ Goal: eliminate `HashMap<BlockId, Vec<u8>>` as primary storage.
 
 - [x] Baseline benchmark recorded (current mem_store behavior)
 - [x] New dense layout chosen:
-  - [ ] Option A: `Vec<Vec<u8>>` (only if no deletes)
+  - [ ] [DROP] Option A: `Vec<Vec<u8>>` (only if no deletes)
   - [x] Option B: `Vec<Option<Vec<u8>>>` (allows delete)
-  - [ ] Option C: slab (`Vec<Entry>` + free list)
+  - [ ] [DROP] Option C: slab (`Vec<Entry>` + free list)
 - [x] Implementation completed in `core-rs/src/store/mem_store.rs`
 - [x] `list_block_ids()` remains supported and deterministic
 - [x] All core tests pass

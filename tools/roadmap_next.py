@@ -30,6 +30,7 @@ from typing import Dict, List, Optional, Tuple
 EPIC_RE = re.compile(r"^#\s+EPIC\s+(E\d+)\s*\(W\s*=\s*(\d+)\)\s+—\s+(.+?)\s*$")
 CB_RE = re.compile(r"^\s*-\s*\[(?P<mark>[ xX])\]\s+(?P<text>.*)$")
 HDR_RE = re.compile(r"^(#{2,6})\s+(.+?)\s*$")  # section headers inside epic
+DROP_RE = re.compile(r"\[DROP\]", re.IGNORECASE)
 
 
 @dataclass
@@ -141,7 +142,10 @@ def find_first_unchecked_in_epic(lines: List[str], span: EpicSpan) -> Optional[T
             continue
         cb = CB_RE.match(line)
         if cb and cb.group("mark").strip() == "":
-            return (i, current_header, cb.group("text").strip())
+            text = cb.group("text").strip()
+            if DROP_RE.search(text):
+                continue
+            return (i, current_header, text)
     return None
 
 
