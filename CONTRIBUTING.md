@@ -25,13 +25,13 @@ QuarXTor is a Rust-based storage stack; contributions are welcome via pull reque
 - Require a recent Rust stable toolchain (via rustup).
 - Local checks:
   - `./tools/check-cyrillic.sh` — ensure no Cyrillic in `.rs`, `docs/*.md`, `.ini`, `.toml`.
-  - `./dev-check.sh` — runs the Cyrillic check, then `cargo build --workspace`, then `cargo test --workspace`.
+  - `./tools/dev-check.sh` — runs the Cyrillic check, then `cargo build --workspace`, then `cargo test --workspace`.
 - PRs are expected to pass these checks locally before being opened.
 
 ### CI
 
 - GitHub Actions workflow `.github/workflows/ci.yml` runs on every `push` and `pull_request`.
-- CI runs `dev-check.sh`, which:
+- CI runs `tools/dev-check.sh`, which:
   - validates config/path invariants,
   - enforces English-only docs/sources (no Cyrillic),
   - builds and tests the workspace.

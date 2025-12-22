@@ -31,6 +31,7 @@ EPIC_RE = re.compile(r"^#\s+EPIC\s+(E\d+)\s*\(W\s*=\s*(\d+)\)\s+—\s+(.+?)\s*$"
 CB_RE = re.compile(r"^\s*-\s*\[(?P<mark>[ xX])\]\s+(?P<text>.*)$")
 HDR_RE = re.compile(r"^(#{2,6})\s+(.+?)\s*$")  # section headers inside epic
 DROP_RE = re.compile(r"\[DROP\]", re.IGNORECASE)
+WAIT_MARKER = "(WAIT)"
 
 
 @dataclass
@@ -88,6 +89,9 @@ def count_checkboxes(lines: List[str], start: int, end: int) -> Tuple[int, int]:
     for i in range(start, end + 1):
         cb = CB_RE.match(lines[i - 1])
         if cb:
+            text = cb.group("text").strip()
+            if DROP_RE.search(text):
+                continue
             total += 1
             mark = cb.group("mark")
             if mark.strip().lower() == "x":
@@ -99,7 +103,8 @@ def epic_progress_map(lines: List[str], spans: List[EpicSpan]) -> Dict[str, Tupl
     mp: Dict[str, Tuple[int, int, float]] = {}
     for s in spans:
         checked, total = count_checkboxes(lines, s.start_line, s.end_line)
-        pct = (checked / total) * 100.0 if total else 0.0
+        # An epic with 0 actionable items (all [DROP] or no checkboxes) is considered complete.
+        pct = (checked / total) * 100.0 if total else 100.0
         mp[s.key] = (checked, total, pct)
     return mp
 
@@ -130,7 +135,13 @@ def epic_sort_key(epic_key: str) -> int:
     return int(m.group(1)) if m else 10_000
 
 
-def find_first_unchecked_in_epic(lines: List[str], span: EpicSpan) -> Optional[Tuple[int, Optional[str], str]]:
+def is_wait_item(text: str) -> bool:
+    return WAIT_MARKER in text
+
+
+def find_first_unchecked_in_epic(
+    lines: List[str], span: EpicSpan, *, include_wait: bool
+) -> Optional[Tuple[int, Optional[str], str]]:
     # Track nearest header within epic
     current_header: Optional[str] = None
     for i in range(span.start_line, span.end_line + 1):
@@ -145,7 +156,50 @@ def find_first_unchecked_in_epic(lines: List[str], span: EpicSpan) -> Optional[T
             text = cb.group("text").strip()
             if DROP_RE.search(text):
                 continue
+            if (not include_wait) and is_wait_item(text):
+                continue
             return (i, current_header, text)
+    return None
+
+
+def find_first_wait_in_epic(lines: List[str], span: EpicSpan) -> Optional[Tuple[int, Optional[str], str]]:
+    current_header: Optional[str] = None
+    for i in range(span.start_line, span.end_line + 1):
+        line = lines[i - 1]
+        hm = HDR_RE.match(line)
+        if hm:
+            current_header = hm.group(2).strip()
+            continue
+        cb = CB_RE.match(line)
+        if cb and cb.group("mark").strip() == "":
+            text = cb.group("text").strip()
+            if DROP_RE.search(text):
+                continue
+            if not is_wait_item(text):
+                continue
+            return (i, current_header, text)
+    return None
+
+
+def find_first_unchecked_in_spans(
+    lines: List[str], spans: List[EpicSpan], *, include_wait: bool
+) -> Optional[Tuple[EpicSpan, int, Optional[str], str]]:
+    for s in sorted(spans, key=lambda s: epic_sort_key(s.key)):
+        hit = find_first_unchecked_in_epic(lines, s, include_wait=include_wait)
+        if hit is None:
+            continue
+        line_no, hdr, cb_text = hit
+        return (s, line_no, hdr, cb_text)
+    return None
+
+
+def find_first_wait_in_spans(lines: List[str], spans: List[EpicSpan]) -> Optional[Tuple[EpicSpan, int, Optional[str], str]]:
+    for s in sorted(spans, key=lambda s: epic_sort_key(s.key)):
+        hit = find_first_wait_in_epic(lines, s)
+        if hit is None:
+            continue
+        line_no, hdr, cb_text = hit
+        return (s, line_no, hdr, cb_text)
     return None
 
 
@@ -155,6 +209,7 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--print-range", action="store_true", help="Print context window around next item")
     ap.add_argument("--context", type=int, default=8, help="Lines of context before/after for --print-range")
+    ap.add_argument("--include-wait", action="store_true", help="Include (WAIT) items as eligible NEXT")
     args = ap.parse_args()
 
     if not os.path.exists(args.file):
@@ -180,48 +235,60 @@ def main() -> int:
     else:
         candidates = spans[:]
 
-    # Pick first epic with incomplete progress
-    candidates_sorted = sorted(candidates, key=lambda s: epic_sort_key(s.key))
-    chosen: Optional[EpicSpan] = None
-    for s in candidates_sorted:
-        _, total, pct = prog.get(s.key, (0, 0, 0.0))
-        # if epic has 0 checkboxes, treat as incomplete (requires author attention)
-        if total == 0 or pct < 100.0 - 1e-9:
-            chosen = s
-            break
+    found = find_first_unchecked_in_spans(lines, candidates, include_wait=args.include_wait)
+    if found is None and (not args.include_wait):
+        wait_hit = find_first_wait_in_spans(lines, candidates)
+        if wait_hit is not None:
+            chosen, line_no, hdr, cb_text = wait_hit
+            ctx = args.context
+            ctx_start = max(1, line_no - ctx)
+            ctx_end = min(len(lines), line_no + ctx)
 
-    if chosen is None:
-        # all candidates complete; if scope limited, widen to all
-        if scope_epics:
-            candidates_sorted = sorted(spans, key=lambda s: epic_sort_key(s.key))
-            for s in candidates_sorted:
-                _, total, pct = prog.get(s.key, (0, 0, 0.0))
-                if total == 0 or pct < 100.0 - 1e-9:
-                    chosen = s
-                    scope_name = "All gates OK"
-                    break
+            if args.json:
+                print(json.dumps({
+                    "scope": scope_name,
+                    "epic": chosen.key,
+                    "epic_title": chosen.title,
+                    "section_header": hdr,
+                    "checkbox_text": cb_text,
+                    "line_no": line_no,
+                    "context_start": ctx_start,
+                    "context_end": ctx_end,
+                    "blocked": True,
+                    "note": "Scope is BLOCKED (only WAIT items remain).",
+                    "gates": gates,
+                    "epic_progress": {
+                        k: {"checked": v[0], "total": v[1], "percent": v[2]}
+                        for k, v in prog.items()
+                    },
+                }, indent=2, sort_keys=True))
+                return 0
 
-    if chosen is None:
+            print(f"SCOPE: {scope_name}")
+            print(f"EPIC:  {chosen.key} — {chosen.title}")
+            if hdr:
+                print(f"SECT:  {hdr}")
+            print("NOTE: Scope is BLOCKED (only WAIT items remain).")
+            print(f"NEXT_WAIT:  - [ ] {cb_text}")
+            print(f"LINE:  {line_no}")
+            if args.print_range:
+                print("")
+                for i in range(ctx_start, ctx_end + 1):
+                    prefix = ">>" if i == line_no else "  "
+                    print(f"{prefix} {i:5d}: {lines[i - 1]}")
+            return 0
+
+    if found is None and scope_epics:
+        # All gate-required epics are complete; widen to all epics.
+        found = find_first_unchecked_in_spans(lines, spans, include_wait=args.include_wait)
+        if found is not None:
+            scope_name = "All gates OK"
+
+    if found is None:
         print("No remaining work items found (all epics 100%).")
         return 0
 
-    hit = find_first_unchecked_in_epic(lines, chosen)
-    if hit is None:
-        # No unchecked boxes but epic incomplete (likely 0 checkboxes): report
-        if args.json:
-            print(json.dumps({
-                "scope": scope_name,
-                "epic": chosen.key,
-                "epic_title": chosen.title,
-                "note": "Epic has no unchecked checkbox lines (maybe 0 checkboxes). Add atomic items or mark DROP explicitly."
-            }, indent=2))
-        else:
-            print(f"SCOPE: {scope_name}")
-            print(f"EPIC: {chosen.key} — {chosen.title}")
-            print("NOTE: Epic has no unchecked checkboxes (maybe 0 checkboxes). Add atomic items or mark DROP explicitly.")
-        return 0
-
-    line_no, hdr, cb_text = hit
+    chosen, line_no, hdr, cb_text = found
     ctx = args.context
     ctx_start = max(1, line_no - ctx)
     ctx_end = min(len(lines), line_no + ctx)

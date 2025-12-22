@@ -35,7 +35,9 @@ from typing import Dict, List, Optional, Tuple
 EPIC_RE = re.compile(
     r"^#\s+EPIC\s+(E\d+)\s*\(W\s*=\s*(\d+)\)\s+—\s+(.+?)\s*$"
 )
-CB_RE = re.compile(r"^\s*-\s*\[(?P<mark>[ xX])\]\s+.*$")
+CB_RE = re.compile(r"^\s*-\s*\[(?P<mark>[ xX])\]\s+(?P<text>.*)$")
+# Any checkbox containing "[DROP]" anywhere in its text is excluded from totals and completion counts.
+DROP_RE = re.compile(r"\[DROP\]", re.IGNORECASE)
 
 
 @dataclass
@@ -82,6 +84,9 @@ def parse_epics(md: str, strict: bool) -> List[Epic]:
 
         cb = CB_RE.match(line)
         if cb:
+            text = cb.group("text").strip()
+            if DROP_RE.search(text):
+                continue
             current.total += 1
             mark = cb.group("mark")
             if mark.strip().lower() == "x":
@@ -138,6 +143,7 @@ def render_text(epics: List[Epic], proj_pct: float, gates: List[GateResult]) -> 
 
     out: List[str] = []
     out.append(f"PROJECT: {proj_pct:.2f}%")
+    out.append("DROP items excluded from counts.")
     out.append("")
     out.append("EPICS:")
     for e in epics_sorted:

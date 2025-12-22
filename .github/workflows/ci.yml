@@ -23,5 +23,5 @@ jobs:
 
       - name: Run dev-check
         run: |
-          chmod +x dev-check.sh
-          ./dev-check.sh
+          chmod +x tools/dev-check.sh
+          ./tools/dev-check.sh

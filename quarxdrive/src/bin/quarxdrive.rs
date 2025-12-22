@@ -16,6 +16,7 @@ fn usage() -> ! {
     eprintln!(
         "Usage:
   quarxdrive <command> [options]
+  quarxdrive --version
 
 Commands:
   import-l0     Import files/dirs into L0 chunk store with dedup
@@ -884,6 +885,11 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         usage();
+    }
+
+    if args.len() == 2 && (args[1] == "--version" || args[1] == "-V") {
+        println!("quarxdrive {}", env!("CARGO_PKG_VERSION"));
+        return;
     }
 
     let cmd = &args[1];

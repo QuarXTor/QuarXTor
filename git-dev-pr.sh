@@ -11,8 +11,8 @@ fi
 
 COMMIT_MSG="$1"
 
-echo "[1/4] dev-check.sh..."
-./dev-check.sh
+echo "[1/4] tools/dev-check.sh..."
+./tools/dev-check.sh
 
 echo "[2/4] git status (before commit)..."
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"

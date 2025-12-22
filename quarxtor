@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./quarxtor quickstart
+  ./quarxtor demo
+  ./quarxtor --version
+
+Commands:
+  quickstart | demo  Run a local demo (repo init/import/stats/tree).
+  --version          Print version (from quarxdrive).
+EOF
+}
+
+resolve_quarxdrive() {
+  if [[ -x "${ROOT_DIR}/target/release/quarxdrive" ]]; then
+    echo "${ROOT_DIR}/target/release/quarxdrive"
+    return
+  fi
+  if [[ -x "${ROOT_DIR}/target/debug/quarxdrive" ]]; then
+    echo "${ROOT_DIR}/target/debug/quarxdrive"
+    return
+  fi
+  echo ""
+}
+
+run_quarxdrive() {
+  local bin
+  bin="$(resolve_quarxdrive)"
+  if [[ -n "${bin}" ]]; then
+    "${bin}" "$@"
+    return
+  fi
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "error: cargo not found; install Rust or build quarxdrive first" >&2
+    exit 1
+  fi
+  cargo run -p quarxdrive --bin quarxdrive -- "$@"
+}
+
+quickstart() {
+  local demo_root demo_repo demo_data python_bin
+  demo_root="$(mktemp -d)"
+  demo_repo="${demo_root}/store"
+  demo_data="${demo_root}/data"
+  mkdir -p "${demo_data}"
+
+  if command -v python3 >/dev/null 2>&1; then
+    python_bin="python3"
+  elif command -v python >/dev/null 2>&1; then
+    python_bin="python"
+  else
+    echo "error: python3 is required for quickstart data generation" >&2
+    exit 1
+  fi
+
+  DEMO_ROOT="${demo_root}" "${python_bin}" - <<'PY'
+from pathlib import Path
+import os
+
+root = Path(os.environ["DEMO_ROOT"])
+data = root / "data"
+data.mkdir(parents=True, exist_ok=True)
+payload = ("alpha\nbeta\n" * 512).encode("utf-8")
+(data / "alpha.so").write_bytes(payload)
+(data / "alpha-copy.so").write_bytes(payload)
+(data / "zeros.so").write_bytes(b"\x00" * 8192)
+print(f"demo root: {root}")
+PY
+
+  run_quarxdrive import-l0 "${demo_repo}" "${demo_data}" --dump
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+cmd="$1"
+shift
+
+case "${cmd}" in
+  --help|-h|help)
+    usage
+    ;;
+  --version|-V)
+    run_quarxdrive --version
+    ;;
+  quickstart|demo)
+    quickstart
+    ;;
+  *)
+    echo "error: unknown command: ${cmd}" >&2
+    usage
+    exit 1
+    ;;
+esac
