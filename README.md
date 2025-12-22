@@ -1,11 +1,53 @@
 # QuarXTor — Hash-Graph Storage Engine  
 *(Name origin: “Quark Store” → “QuarX-Tor”)*
 
+─────────────────────────────────────────────────────────────────────────
+## Onboarding
+
+### What is QuarXTor
+
 QuarXTor is a layered hash-graph storage engine for high-speed ingest,  
 RAM-aware deduplication, stable on-disk formats, and long-term integrity.
 
 It is built around a multi-level block hierarchy (L0 / L1 / Z / Object) forming a deterministic, verifiable graph.  
 The design goal: **predictable performance** → **predictable storage efficiency** → **predictable evolution**.
+
+### Quick Start (Demo)
+
+Prereqs: Rust toolchain (cargo + rustc) and python3.  
+From the repo root:
+
+```bash
+./quarxtor quickstart
+```
+
+Notes:
+• Generates a small dataset, imports it, and prints stats/tree.  
+• On Windows, use WSL or adapt the script.
+
+### Install / Build
+
+Build the CLI locally:
+
+```bash
+cargo build -p quarxdrive --release --locked
+```
+
+### Packaging / Releases
+
+No published installers or package-manager releases yet.  
+Build a local tarball (Linux/macOS):
+
+```bash
+./packaging/tarball/build-dist.sh
+```
+
+See `docs/packaging.md` for cross-platform notes and install steps.
+
+### Contributor / Dev
+
+Contributor workflow and strict checks live in `CONTRIBUTING.md`.  
+Dev checks: `tools/dev-check.sh` (Cyrillic scan + build + tests).
 
 ─────────────────────────────────────────────────────────────────────────
 ## 🔭 Architecture at a Glance
@@ -167,9 +209,11 @@ This makes it possible to understand *why* storage is saved, not just *how much*
 ─────────────────────────────────────────────────────────────────────────
 ## 📘 Getting Started
 
+Quick Start commands are near the top; this section is the short pointer.
+
     git clone https://github.com/QuarXTor/QuarXTor.git
     cd QuarXTor
-    ./dev-check.sh
+    ./quarxtor quickstart
 
 • CLI and FUSE integration live in `quarxdrive/`.  
 • RPC server and cluster plumbing live in `quarxnet/`.
@@ -179,6 +223,7 @@ This makes it possible to understand *why* storage is saved, not just *how much*
 
 • `ARCH.md` — architecture overview  
 • `docs/core-formats.md` — stable on-disk ABI  
+• `docs/packaging.md` — packaging and install details  
 • `ROADMAP.md` — implementation stages and priorities  
 • `CONTRIBUTING.md` — dev workflow  
 • `AGENTS.md` — invariants and expectations
