@@ -2384,6 +2384,11 @@ EVIDENCE:
 - OUT: [1/3] Cyrillic check...
 - OUT: OK: no Cyrillic found.
 - OUT: test znode_roundtrip_over_net_and_drive ... ok
+- BLOCKER: push failed; no git remote configured.
+- CMD: git push -u origin work/readme-demo-quickstart
+- OUT: fatal: 'origin' does not appear to be a git repository
+- OUT: fatal: Could not read from remote repository.
+- OUT: Please make sure you have the correct access rights
 
 --- 
 
