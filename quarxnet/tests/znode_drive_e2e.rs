@@ -1,6 +1,7 @@
 //! End-to-end test: quarxnet <-> quarxdrive ZNode flow via quarxproto and real TCP server.
 use std::env;
 use std::fs;
+use std::io::ErrorKind;
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -37,10 +38,11 @@ fn znode_roundtrip_over_net_and_drive() {
     // Bind on ephemeral port.
     let listener = match TcpListener::bind(("127.0.0.1", 0)) {
         Ok(l) => l,
-        Err(e) => {
-            eprintln!("skipping znode e2e: cannot bind TCP listener: {}", e);
+        Err(e) if e.kind() == ErrorKind::PermissionDenied => {
+            eprintln!("skipping znode e2e: TCP bind not permitted");
             return;
         }
+        Err(e) => panic!("bind listener: {e}"),
     };
     let addr = listener.local_addr().unwrap();
     let node_id: u64 = 1;
@@ -128,6 +130,9 @@ fn znode_roundtrip_over_net_and_drive() {
     assert_eq!(zn_back.kind, zn.kind);
     assert_eq!(zn_back.size, zn.size);
     assert_eq!(zn_back.children, zn.children);
+
+    // Close the client stream so the server loop can exit before join().
+    drop(transport);
 
     // Wait for server thread to finish.
     server_thread.join().expect("server thread").expect("server ok");
